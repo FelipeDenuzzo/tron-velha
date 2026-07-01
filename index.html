@@ -68,6 +68,7 @@ var gameActive=false;
 var winCells=null;
 var winFlashTimer=0;
 var overlay=document.getElementById('overlay');
+var isTouchDevice=('ontouchstart' in window)||navigator.maxTouchPoints>0;
 
 function overlayShow(){overlay.style.display='flex';}
 function overlayHide(){overlay.style.display='none';}
@@ -225,11 +226,25 @@ function drawBg(){
   for(var y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
 }
 function drawGrid(){
-  var sz=cellSize*GRID;ctx.save();
+  var sz=cellSize*GRID;
+  /* desenha todas as 4 linhas externas individualmente para glow uniforme */
+  ctx.save();
   ctx.strokeStyle='#00f5ff';ctx.lineWidth=2;ctx.shadowColor='#00f5ff';ctx.shadowBlur=18;
-  for(var i=1;i<GRID;i++){var x=gridOffX+i*cellSize;ctx.beginPath();ctx.moveTo(x,gridOffY);ctx.lineTo(x,gridOffY+sz);ctx.stroke();}
-  for(var i=1;i<GRID;i++){var y=gridOffY+i*cellSize;ctx.beginPath();ctx.moveTo(gridOffX,y);ctx.lineTo(gridOffX+sz,y);ctx.stroke();}
-  ctx.lineWidth=3;ctx.shadowBlur=28;ctx.strokeRect(gridOffX,gridOffY,sz,sz);ctx.restore();
+  /* linhas internas verticais */
+  for(var i=1;i<GRID;i++){var lx=gridOffX+i*cellSize;ctx.beginPath();ctx.moveTo(lx,gridOffY);ctx.lineTo(lx,gridOffY+sz);ctx.stroke();}
+  /* linhas internas horizontais */
+  for(var i=1;i<GRID;i++){var ly=gridOffY+i*cellSize;ctx.beginPath();ctx.moveTo(gridOffX,ly);ctx.lineTo(gridOffX+sz,ly);ctx.stroke();}
+  /* bordas externas: cada lado individualmente com mesmo glow */
+  ctx.lineWidth=2;
+  /* topo */
+  ctx.beginPath();ctx.moveTo(gridOffX,gridOffY);ctx.lineTo(gridOffX+sz,gridOffY);ctx.stroke();
+  /* baixo */
+  ctx.beginPath();ctx.moveTo(gridOffX,gridOffY+sz);ctx.lineTo(gridOffX+sz,gridOffY+sz);ctx.stroke();
+  /* esquerda */
+  ctx.beginPath();ctx.moveTo(gridOffX,gridOffY);ctx.lineTo(gridOffX,gridOffY+sz);ctx.stroke();
+  /* direita */
+  ctx.beginPath();ctx.moveTo(gridOffX+sz,gridOffY);ctx.lineTo(gridOffX+sz,gridOffY+sz);ctx.stroke();
+  ctx.restore();
 }
 function drawX(cx,cy,sz,alpha,glow){
   var s=sz*0.32;ctx.save();ctx.globalAlpha=alpha;
@@ -265,14 +280,15 @@ function drawWinLine(dt){
   ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();ctx.restore();
 }
 function drawHover(mx,my){
-  if(!gameActive)return;
+  /* hover apenas em desktop (sem touch) */
+  if(isTouchDevice||!gameActive)return;
   var idx=getCell(mx,my);
   if(idx<0||board[idx]!==null)return;
   var col=idx%GRID,row=Math.floor(idx/GRID);
   var x=gridOffX+col*cellSize,y=gridOffY+row*cellSize;
-  ctx.fillStyle=currentPlayer==='X'?'rgba(0,245,255,0.08)':'rgba(255,0,204,0.08)';
+  ctx.fillStyle=currentPlayer==='X'?'rgba(0,245,255,0.06)':'rgba(255,0,204,0.06)';
   ctx.fillRect(x+2,y+2,cellSize-4,cellSize-4);
-  ctx.strokeStyle=currentPlayer==='X'?'rgba(0,245,255,0.3)':'rgba(255,0,204,0.3)';
+  ctx.strokeStyle=currentPlayer==='X'?'rgba(0,245,255,0.2)':'rgba(255,0,204,0.2)';
   ctx.lineWidth=1;ctx.strokeRect(x+2,y+2,cellSize-4,cellSize-4);
 }
 function drawParticles(dt){
